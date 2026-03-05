@@ -1,0 +1,54 @@
+import { 
+  FileText, 
+  Merge, 
+  Split, 
+  RefreshCw, 
+  Zap, 
+  Lock, 
+  FileDown, 
+  FileUp 
+} from 'lucide-react';
+import { Tool, Contributor } from './types';
+
+export const PDF_TOOLS: Tool[] = [
+  { id: 'merge', name: 'Merge PDF', icon: Merge, description: 'Combine multiple PDFs into one document.', category: 'merge' },
+  { id: 'split', name: 'Split PDF', icon: Split, description: 'Extract pages or split into multiple files.', category: 'split' },
+  { id: 'compress', name: 'Compress PDF', icon: Zap, description: 'Reduce file size while keeping quality.', category: 'compress' },
+  { id: 'pdf-to-word', name: 'PDF to Word', icon: FileText, description: 'Convert PDF to editable Word docs.', category: 'convert' },
+  { id: 'word-to-pdf', name: 'Word to PDF', icon: FileUp, description: 'Convert Word docs to PDF format.', category: 'convert' },
+  { id: 'pdf-to-jpg', name: 'PDF to JPG', icon: RefreshCw, description: 'Extract images or save pages as JPG.', category: 'convert' },
+  { id: 'edit', name: 'Edit PDF', icon: FileDown, description: 'Add text, shapes, and annotations.', category: 'edit' },
+  { id: 'protect', name: 'Protect PDF', icon: Lock, description: 'Add passwords and encrypt your files.', category: 'security' },
+  { id: 'unlock', name: 'Unlock PDF', icon: Lock, description: 'Remove passwords from protected PDFs.', category: 'security' },
+];
+
+export const CONTRIBUTORS: Contributor[] = [
+  {
+    name: "Alex Rivera",
+    role: "Lead Developer",
+    image: "https://picsum.photos/seed/alex/200/200",
+    bio: "Full-stack engineer with a passion for high-performance web applications and document processing systems.",
+    social: { github: "#", twitter: "#", linkedin: "#" }
+  },
+  {
+    name: "Sarah Chen",
+    role: "UI/UX Designer",
+    image: "https://picsum.photos/seed/sarah/200/200",
+    bio: "Crafting intuitive and beautiful user experiences. Focused on making complex tools accessible to everyone.",
+    social: { twitter: "#", linkedin: "#" }
+  },
+  {
+    name: "Marcus Thorne",
+    role: "Backend Architect",
+    image: "https://picsum.photos/seed/marcus/200/200",
+    bio: "Specialist in distributed systems and secure data handling. Ensuring PDFile is fast and safe.",
+    social: { github: "#", linkedin: "#" }
+  },
+  {
+    name: "Elena Vance",
+    role: "Frontend Engineer",
+    image: "https://picsum.photos/seed/elena/200/200",
+    bio: "Animation enthusiast and React expert. Bringing the PDFile interface to life with smooth interactions.",
+    social: { github: "#", twitter: "#" }
+  }
+];

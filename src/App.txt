@@ -1,0 +1,46 @@
+import { motion } from "framer-motion";
+import { ArrowRight, Star } from "lucide-react";
+
+function App() {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-md w-full bg-gray-800 rounded-2xl shadow-lg p-8"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">Welcome</h1>
+          <motion.div
+            whileHover={{ scale: 1.2, rotate: 90 }}
+            whileTap={{ scale: 0.8 }}
+          >
+            <Star className="text-yellow-400" size={32} />
+          </motion.div>
+        </div>
+        <p className="text-gray-400 mb-8">
+          This is a sample application built with React, Tailwind CSS,
+          Framer Motion, and Lucide React.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center transition-colors duration-300"
+        >
+          Get Started <ArrowRight className="ml-2" />
+        </motion.button>
+      </motion.div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="mt-8 text-gray-500"
+      >
+        Powered by Gemini
+      </motion.p>
+    </div>
+  );
+}
+
+export default App;
