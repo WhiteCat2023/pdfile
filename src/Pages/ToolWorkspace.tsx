@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react';
+
+import { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -9,8 +11,26 @@ import {
   Trash2, 
   Lock 
 } from 'lucide-react';
+import { saveAs } from 'file-saver';
 import { Tool } from '../types';
+import { mergePdfs, splitPdf } from '../utils/pdf';
 import { SuccessDialog } from '../components/SuccessDialog';
+import { Notification } from '../components/Notification';
+import { PDF_TOOLS } from '../constants';
+
+// Wrapper component to handle routing and data fetching
+export function ToolWorkspaceWrapper() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const tool = PDF_TOOLS.find(t => t.id === id);
+
+  if (!tool) {
+    return <div>Tool not found</div>; // Or a more sophisticated 404 page
+  }
+
+  return <ToolWorkspace tool={tool} onBack={() => navigate(-1)} />;
+}
+
 
 interface ToolWorkspaceProps {
   tool: Tool;
@@ -22,25 +42,99 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [splitRanges, setSplitRanges] = useState('');
+  const [notification, setNotification] = useState<{ message: string, type: 'error' | 'info' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const allowsMultipleFiles = useMemo(() => tool.category === 'merge', [tool.category]);
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
     const pdfFiles = Array.from(newFiles).filter(file => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
-    setFiles(prev => [...prev, ...pdfFiles]);
+    
+    if (allowsMultipleFiles) {
+      setFiles(prev => [...prev, ...pdfFiles]);
+    } else {
+      setFiles(pdfFiles.slice(0, 1));
+    }
   };
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleProcess = () => {
+  const showNotification = (message: string, type: 'error' | 'info' = 'info') => {
+    setNotification({ message, type });
+  };
+
+  const handleProcess = async () => {
+    if (files.length === 0) return;
     setIsProcessing(true);
-    setTimeout(() => {
+    setNotification(null);
+
+    try {
+      let success = false;
+      switch (tool.id) {
+        case 'merge-pdf':
+          if (files.length < 2) {
+            showNotification('Please select at least two files to merge.', 'error');
+            setIsProcessing(false);
+            return;
+          }
+          const mergedPdf = await mergePdfs(files);
+          saveAs(new Blob([mergedPdf], { type: 'application/pdf' }), 'merged.pdf');
+          success = true;
+          break;
+
+        case 'split-pdf':
+          if (files.length !== 1 || !splitRanges) {
+            showNotification('Please select one file and specify ranges to split.', 'error');
+            setIsProcessing(false);
+            return;
+          }
+          const splitPdfs = await splitPdf(files[0], splitRanges);
+          splitPdfs.forEach((pdf, i) => {
+            saveAs(new Blob([pdf], { type: 'application/pdf' }), `split-${files[0].name.replace('.pdf', '')}-${i + 1}.pdf`);
+          });
+          success = true;
+          break;
+
+        case 'compress-pdf':
+          if (files.length !== 1) {
+            showNotification('Please select one file to compress.', 'error');
+            setIsProcessing(false);
+            return;
+          }
+          showNotification("The compress feature is not yet implemented.");
+          success = false;
+          break;
+
+        case 'pdf-to-word':
+        case 'pdf-to-excel':
+        case 'pdf-to-ppt':
+        case 'pdf-to-jpg':
+          if (files.length !== 1) {
+            showNotification(`Please select one file to convert to ${tool.name.split(' ').pop()}.`, 'error');
+            setIsProcessing(false);
+            return;
+          }
+          showNotification(`The ${tool.name} feature is not yet implemented.`);
+          success = false;
+          break;
+      }
+
+      if (success) {
+        setShowSuccess(true);
+        setFiles([]);
+        setSplitRanges('');
+      }
+    } catch (error) {
+      console.error("Error processing files:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      showNotification(`An error occurred: ${errorMessage}`, 'error');
+    } finally {
       setIsProcessing(false);
-      setShowSuccess(true);
-      setFiles([]);
-    }, 2000);
+    }
   };
 
   return (
@@ -51,6 +145,13 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
       className="flex-1 flex flex-col"
     >
       <AnimatePresence>
+        {notification && (
+          <Notification 
+            message={notification.message} 
+            type={notification.type} 
+            onClose={() => setNotification(null)} 
+          />
+        )}
         {showSuccess && (
           <SuccessDialog 
             toolName={tool.name} 
@@ -90,10 +191,24 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           type="file" 
           ref={fileInputRef}
           onChange={(e) => handleFiles(e.target.files)}
-          multiple
+          multiple={allowsMultipleFiles}
           accept=".pdf"
           className="hidden"
         />
+        
+        {tool.id === 'split-pdf' && files.length > 0 && (
+          <div className="mb-4">
+            <label htmlFor="split-ranges" className="block text-sm font-medium text-zinc-700 mb-2">Page ranges to split</label>
+            <input
+              type="text"
+              id="split-ranges"
+              value={splitRanges}
+              onChange={(e) => setSplitRanges(e.target.value)}
+              placeholder="e.g., 1-3, 5, 7-9"
+              className="w-full px-4 py-2 border border-zinc-200 bg-white rounded-lg focus:ring-zinc-500 focus:border-zinc-500 shadow-sm"
+            />
+          </div>
+        )}
 
         {files.length === 0 ? (
           <div 
@@ -110,7 +225,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
               <Upload size={48} strokeWidth={1} />
             </div>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-zinc-900 mb-2">Drop your PDF here</h2>
+              <h2 className="text-2xl font-bold text-zinc-900 mb-2">Drop your PDF{allowsMultipleFiles ? 's' : ''} here</h2>
               <p className="text-zinc-500 text-sm">or click to browse your files</p>
             </div>
           </div>
@@ -118,12 +233,14 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           <div className="flex-1 w-full bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Selected Files ({files.length})</span>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-bold text-zinc-900 hover:underline"
-              >
-                Add more
-              </button>
+              {allowsMultipleFiles &&
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-bold text-zinc-900 hover:underline"
+                >
+                  Add more
+                </button>
+              }
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               <AnimatePresence initial={false}>

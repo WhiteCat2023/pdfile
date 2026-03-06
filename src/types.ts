@@ -1,6 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 
-export type Page = 'home' | 'merge' | 'split' | 'convert' | 'compress' | 'team';
+export type Page = 'home' | 'merge' | 'split' | 'convert' | 'compress' | 'team' | 'proofreading' | 'pricing';
 
 export interface Tool {
   id: string;
