@@ -75,7 +75,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
     try {
       let success = false;
       switch (tool.id) {
-        case 'merge-pdf':
+        case 'merge':
           if (files.length < 2) {
             showNotification('Please select at least two files to merge.', 'error');
             setIsProcessing(false);
@@ -86,7 +86,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           success = true;
           break;
 
-        case 'split-pdf':
+        case 'split':
           if (files.length !== 1 || !splitRanges) {
             showNotification('Please select one file and specify ranges to split.', 'error');
             setIsProcessing(false);
@@ -99,7 +99,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           success = true;
           break;
 
-        case 'compress-pdf':
+        case 'compress':
           if (files.length !== 1) {
             showNotification('Please select one file to compress.', 'error');
             setIsProcessing(false);
