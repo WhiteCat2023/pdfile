@@ -14,6 +14,9 @@ This project is a React-based web application that serves as a demonstration of 
 *   **Uniform Design:** A consistent and modern design language is used throughout the application, leveraging a theming and component library.
 *   **Responsive Layout:** The application is designed to be responsive and work on various screen sizes.
 *   **Navigation:** A clear and intuitive navigation bar allows users to move between pages.
+*   **Split PDF Feature:** Users can split a PDF by providing page ranges. The tool now has two options:
+    *   **Split by range:** Creates a separate PDF for each page range provided.
+    *   **Extract pages:** Combines the selected pages into a single new PDF.
 
 ## Current Plan: Implement Open-Core Model
 

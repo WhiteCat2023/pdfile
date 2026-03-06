@@ -9,11 +9,11 @@ import {
   Upload, 
   File as FileIcon, 
   Trash2, 
-  Lock 
+  Lock
 } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { Tool } from '../types';
-import { mergePdfs, splitPdf } from '../utils/pdf';
+import { mergePdfs, splitPdf, extractPages } from '../utils/pdf';
 import { SuccessDialog } from '../components/SuccessDialog';
 import { Notification } from '../components/Notification';
 import { PDF_TOOLS } from '../constants';
@@ -42,6 +42,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [splitOption, setSplitOption] = useState('ranges'); // 'ranges' or 'extract'
   const [splitRanges, setSplitRanges] = useState('');
   const [notification, setNotification] = useState<{ message: string, type: 'error' | 'info' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +76,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
     try {
       let success = false;
       switch (tool.id) {
-        case 'merge':
+        case 'merge': {
           if (files.length < 2) {
             showNotification('Please select at least two files to merge.', 'error');
             setIsProcessing(false);
@@ -85,21 +86,28 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           saveAs(new Blob([mergedPdf], { type: 'application/pdf' }), 'merged.pdf');
           success = true;
           break;
+        }
 
-        case 'split':
+        case 'split': {
           if (files.length !== 1 || !splitRanges) {
-            showNotification('Please select one file and specify ranges to split.', 'error');
+            showNotification('Please select one file and specify pages.', 'error');
             setIsProcessing(false);
             return;
           }
-          const splitPdfs = await splitPdf(files[0], splitRanges);
-          splitPdfs.forEach((pdf, i) => {
-            saveAs(new Blob([pdf], { type: 'application/pdf' }), `split-${files[0].name.replace('.pdf', '')}-${i + 1}.pdf`);
-          });
+          if (splitOption === 'ranges') {
+            const splitPdfs = await splitPdf(files[0], splitRanges);
+            splitPdfs.forEach((pdf, i) => {
+              saveAs(new Blob([pdf], { type: 'application/pdf' }), `split-${files[0].name.replace('.pdf', '')}-${i + 1}.pdf`);
+            });
+          } else { // extract
+            const extractedPdf = await extractPages(files[0], splitRanges);
+            saveAs(new Blob([extractedPdf], { type: 'application/pdf' }), `extracted-${files[0].name}`);
+          }
           success = true;
           break;
+        }
 
-        case 'compress':
+        case 'compress': {
           if (files.length !== 1) {
             showNotification('Please select one file to compress.', 'error');
             setIsProcessing(false);
@@ -108,11 +116,12 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           showNotification("The compress feature is not yet implemented.");
           success = false;
           break;
+        }
 
         case 'pdf-to-word':
         case 'pdf-to-excel':
         case 'pdf-to-ppt':
-        case 'pdf-to-jpg':
+        case 'pdf-to-jpg': {
           if (files.length !== 1) {
             showNotification(`Please select one file to convert to ${tool.name.split(' ').pop()}.`, 'error');
             setIsProcessing(false);
@@ -121,6 +130,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           showNotification(`The ${tool.name} feature is not yet implemented.`);
           success = false;
           break;
+        }
       }
 
       if (success) {
@@ -136,6 +146,23 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
       setIsProcessing(false);
     }
   };
+
+  const SplitOptions = () => (
+    <div className="mb-6 bg-zinc-100 p-1 rounded-full flex items-center gap-1 shadow-inner">
+      <button 
+        onClick={() => setSplitOption('ranges')}
+        className={`w-full text-center px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 ${splitOption === 'ranges' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+      >
+        Split by range
+      </button>
+      <button 
+        onClick={() => setSplitOption('extract')}
+        className={`w-full text-center px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 ${splitOption === 'extract' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+      >
+        Extract pages
+      </button>
+    </div>
+  );
 
   return (
     <motion.div 
@@ -196,17 +223,25 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           className="hidden"
         />
         
-        {tool.id === 'split-pdf' && files.length > 0 && (
+        {tool.id === 'split' && files.length > 0 && (
           <div className="mb-4">
-            <label htmlFor="split-ranges" className="block text-sm font-medium text-zinc-700 mb-2">Page ranges to split</label>
+            <SplitOptions />
+            <label htmlFor="split-ranges" className="block text-sm font-medium text-zinc-700 mb-2">
+              {splitOption === 'ranges' ? 'Page ranges to split' : 'Pages to extract'}
+            </label>
             <input
               type="text"
               id="split-ranges"
               value={splitRanges}
               onChange={(e) => setSplitRanges(e.target.value)}
-              placeholder="e.g., 1-3, 5, 7-9"
+              placeholder={splitOption === 'ranges' ? "e.g., 1-3, 5, 7-9" : "e.g., 1, 3-5, 8"}
               className="w-full px-4 py-2 border border-zinc-200 bg-white rounded-lg focus:ring-zinc-500 focus:border-zinc-500 shadow-sm"
             />
+            <p className="text-xs text-zinc-500 mt-2">
+              {splitOption === 'ranges'
+                ? "Each range will be saved as a separate PDF."
+                : "All extracted pages will be saved into a single new PDF."}
+            </p>
           </div>
         )}
 

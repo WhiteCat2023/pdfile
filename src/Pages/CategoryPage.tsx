@@ -22,7 +22,7 @@ export function CategoryPage({ category, tools }: CategoryPageProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        {tools.map((tool, _) => (
+        {tools.map((tool) => (
           <Link to={`/tool/${tool.id}`} key={tool.id} className="block h-full">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
