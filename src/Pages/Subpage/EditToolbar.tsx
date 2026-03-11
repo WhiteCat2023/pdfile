@@ -2,7 +2,7 @@
 import {
   MousePointer, Type, Square, Circle, ImageIcon
 } from 'lucide-react';
-import { AnnotationMode } from '../../../types';
+import { AnnotationMode } from '../../types';
 
 interface EditToolbarProps {
   annotationMode: AnnotationMode;

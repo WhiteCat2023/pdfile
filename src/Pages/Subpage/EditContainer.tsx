@@ -91,7 +91,7 @@ export function EditContainer({
       <EditToolbar
         annotationMode={annotationMode}
         onModeChange={setAnnotationMode}
-        onImageUpload={() => imageAnnotationInputref.current?.click()}
+        onImageUpload={() => imageAnnotationInputRef.current?.click()}
       />
 
       <EditCanvas

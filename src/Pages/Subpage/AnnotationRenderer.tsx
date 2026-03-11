@@ -1,5 +1,5 @@
 
-import { EditAnnotation, AnnotationMode } from '../../../types';
+import { EditAnnotation, AnnotationMode } from '../../types';
 
 interface AnnotationRendererProps {
   annotation: EditAnnotation;

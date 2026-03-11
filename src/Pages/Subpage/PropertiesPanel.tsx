@@ -1,5 +1,5 @@
 
-import { EditAnnotation } from '../../../types';
+import { EditAnnotation } from '../../types';
 
 interface PropertiesPanelProps {
   annotation: EditAnnotation | undefined;

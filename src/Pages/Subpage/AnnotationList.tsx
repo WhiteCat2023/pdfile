@@ -1,6 +1,6 @@
 
 import { Type, Square, Circle, ImageIcon, X } from 'lucide-react';
-import { EditAnnotation } from '../../../types';
+import { EditAnnotation } from '../../types';
 
 interface AnnotationListProps {
   annotations: EditAnnotation[];

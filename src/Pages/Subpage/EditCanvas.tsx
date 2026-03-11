@@ -1,7 +1,7 @@
 
 import React, { forwardRef } from 'react';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { AnnotationMode, EditAnnotation } from '../../../types';
+import { AnnotationMode, EditAnnotation } from '../../types';
 import { AnnotationRenderer } from './AnnotationRenderer';
 
 interface EditCanvasProps {
