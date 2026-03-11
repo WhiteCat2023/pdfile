@@ -1,6 +1,6 @@
 
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 import { PDF_TOOLS, CONTRIBUTORS } from './constants';
 import { ToolWorkspaceWrapper } from './Pages/ToolWorkspace';
@@ -11,6 +11,7 @@ import ProofreadingPage from './Pages/ProofreadingPage';
 import PricingPage from './Pages/PricingPage';
 import { LoginPage } from './Pages/LoginPage';
 import { SignupPage } from './Pages/SignupPage';
+import { ForgotPasswordPage } from './Pages/ForgotPasswordPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 
@@ -22,7 +23,6 @@ export default function App() {
       <Header />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-12 md:py-20">
-        <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}
@@ -37,6 +37,7 @@ export default function App() {
               <Route path="/proofreading" element={<ProofreadingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/merge" element={<CategoryPage category="merge" tools={PDF_TOOLS.filter(t => t.category === 'merge')} />} />
               <Route path="/split" element={<CategoryPage category="split" tools={PDF_TOOLS.filter(t => t.category === 'split')} />} />
               <Route path="/convert" element={<CategoryPage category="convert" tools={PDF_TOOLS.filter(t => t.category === 'convert')} />} />
@@ -44,7 +45,7 @@ export default function App() {
               <Route path="/tool/:id" element={<ToolWorkspaceWrapper />} />
             </Routes>
           </motion.div>
-        </AnimatePresence>
+
       </main>
 
       <Footer />

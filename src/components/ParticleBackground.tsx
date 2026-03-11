@@ -11,7 +11,7 @@ export const ParticleBackground = () => {
 
   const particlesLoaded = useCallback(
     async (container: Container | undefined) => {
-      await console.log(container);
+      console.log(container);
     },
     []
   );
@@ -22,74 +22,89 @@ export const ParticleBackground = () => {
       init={particlesInit}
       loaded={particlesLoaded}
       options={{
-        background: {
-          color: {
-            value: '#fff',
-          },
-        },
+        detectRetina: true,
         fpsLimit: 120,
         interactivity: {
+          detectsOn: "canvas",
           events: {
             onHover: {
               enable: true,
-              mode: 'grab',
+              mode: 'bubble'
             },
-            resize: true,
+            resize: true
           },
           modes: {
-            push: {
-              quantity: 4,
-            },
-
-          },
+            bubble: {
+              color: "#9AA6B2",
+              distance: 100,
+              duration: 2,
+              opacity: 1,
+              size: 10,
+              speed: 3
+            }
+          }
         },
         particles: {
           color: {
-            value: '#000',
+            value: "#9AA6B2"
           },
           links: {
+            blink: false,
+            color: "#BCCCDC",
+            consent: false,
+            distance: 200,
             enable: true,
+            opacity: 0.8,
+            width: 1
           },
           move: {
-            direction: 'none',
-            enable: true,
-            outModes: {
-              default: 'bounce',
-            },
-            random: false,
-            speed: 2,
-            straight: false,
             attract: {
-              enable: true,
-              rotateX: 3000,
-              rotateY: 3000,
+              enable: false,
+              rotate: {
+                x: 600,
+                y: 1200
+              }
             },
+            bounce: false,
+            direction: "none",
+            enable: true,
+            outMode: "bounce",
+            random: false,
+            speed: 1,
+            straight: false
           },
           number: {
             density: {
-              enable: true,
-              area: 800,
+              enable: false,
+              area: 2000
             },
-            value: 100,
+            limit: 0,
+            value: 300
           },
           opacity: {
-            value: 0.7,
             animation: {
               enable: true,
-              speed: 1,
-              minimumValue: 0.1,
-              sync: false,
+              minimumValue: 0.05,
+              speed: 3,
+              sync: false
             },
+            random: false,
+            value: 1
           },
           shape: {
-            type: 'circle',
-
+            type: "circle"
           },
           size: {
-            value: { min: 1, max: 3 },
-          },
-        },
-        detectRetina: true,
+            animation: {
+              enable: false,
+              minimumValue: 0.1,
+              speed: 40,
+              sync: false
+            },
+            random: true,
+            value: 3
+          }
+        }
       }}
     />
   );
