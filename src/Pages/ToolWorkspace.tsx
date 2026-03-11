@@ -41,6 +41,13 @@ export function ToolWorkspaceWrapper() {
   return <ToolWorkspace tool={tool} onBack={() => navigate(-1)} />;
 }
 
+interface DragState {
+    id: string;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+}
 
 interface ToolWorkspaceProps {
   tool: Tool;
@@ -71,7 +78,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
   const [editTotalPages, setEditTotalPages] = useState(0);
   const [editPagePreviewUrl, setEditPagePreviewUrl] = useState<string | null>(null);
   const [editPreviewLoading, setEditPreviewLoading] = useState(false);
-  const dragStateRef = useRef<any>(null);
+  const dragStateRef = useRef<DragState | null>(null);
 
   const allowsMultipleFiles = useMemo(() => tool.category === 'merge', [tool.category]);
 

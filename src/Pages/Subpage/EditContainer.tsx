@@ -6,6 +6,14 @@ import { EditCanvas } from './EditCanvas';
 import { AnnotationList } from './AnnotationList';
 import { PropertiesPanel } from './PropertiesPanel';
 
+interface DragState {
+  id: string;
+  startX: number;
+  startY: number;
+  origX: number;
+  origY: number;
+}
+
 interface EditContainerProps {
   // State
   annotations: EditAnnotation[];
@@ -24,7 +32,7 @@ interface EditContainerProps {
   deleteAnnotation: (id: string) => void;
   addAnnotation: (nx: number, ny: number, mode: AnnotationMode, extra?: Partial<EditAnnotation>) => void;
   handleImageAnnotationFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  dragStateRef: React.MutableRefObject<any>;
+  dragStateRef: React.MutableRefObject<DragState | null>;
 }
 
 export function EditContainer({
@@ -83,7 +91,7 @@ export function EditContainer({
       <EditToolbar
         annotationMode={annotationMode}
         onModeChange={setAnnotationMode}
-        onImageUpload={() => imageAnnotationInputRef.current?.click()}
+        onImageUpload={() => imageAnnotationInputref.current?.click()}
       />
 
       <EditCanvas

@@ -5,7 +5,7 @@ export const Footer = () => {
   const location = useLocation();
 
   return (
-    <footer className="border-t border-zinc-100 py-12 px-6">
+    <footer className="border-t border-zinc-100 py-12 px-6 z-10 bg-white">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <Link to="/" className="flex flex-col items-center md:items-start gap-2">
           <span className="text-xl font-extrabold tracking-tighter italic">PDFile</span>
