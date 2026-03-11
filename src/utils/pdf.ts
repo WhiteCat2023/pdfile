@@ -1,5 +1,12 @@
 
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from '@cantoo/pdf-lib';
+import * as pdfjs from 'pdfjs-dist';
+import JSZip from 'jszip';
+import type { EditAnnotation, PdfPermissions } from '../types';
+
+// Configure pdfjs worker (resolved by bundler at build time, no CDN dependency)
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   const mergedPdf = await PDFDocument.create();
@@ -93,4 +100,317 @@ export const convertPdf = async (file: File, toFormat: string): Promise<Blob> =>
   // This would require a separate library or service.
   // We will return a dummy blob for now.
   return new Blob([`Dummy conversion of ${file.name} to ${toFormat}`], { type: 'text/plain' });
+};
+
+// ─── PDF to JPG ───────────────────────────────────────────────────────────────
+
+/**
+ * Renders every page of a PDF to a JPEG Blob at 2× device-pixel ratio for
+ * crisp output, then returns them in page order.
+ *
+ * @param file    - The PDF File object to convert.
+ * @param quality - JPEG quality 0–1 (default 0.92).
+ * @returns       Array of JPEG Blobs, one per page.
+ */
+export const pdfToJpg = async (file: File, quality = 0.92): Promise<Blob[]> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+  const doc = await loadingTask.promise;
+  const pageCount = doc.numPages;
+
+  if (pageCount === 0) {
+    throw new Error('The PDF has no pages to convert.');
+  }
+
+  const blobs: Blob[] = [];
+  const SCALE = 2; // 2× resolution for crisp output
+
+  for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+    const page = await doc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: SCALE });
+
+    const canvas = new OffscreenCanvas(Math.round(viewport.width), Math.round(viewport.height));
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+
+    if (!ctx) throw new Error(`Could not get 2D context for page ${pageNum}.`);
+
+    await page.render({ canvasContext: ctx as unknown as CanvasRenderingContext2D, viewport }).promise;
+
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
+    blobs.push(blob);
+  }
+
+  return blobs;
+};
+
+/**
+ * Converts a PDF to a ZIP archive containing one JPEG per page.
+ *
+ * @param file    - The PDF File object.
+ * @param quality - JPEG quality 0–1.
+ * @returns       A Blob of the ZIP archive.
+ */
+export const pdfToJpgZip = async (file: File, quality = 0.92): Promise<Blob> => {
+  const blobs = await pdfToJpg(file, quality);
+  const zip = new JSZip();
+  const baseName = file.name.replace(/\.pdf$/i, '');
+
+  blobs.forEach((blob, index) => {
+    const paddedNum = String(index + 1).padStart(3, '0');
+    zip.file(`${baseName}-page-${paddedNum}.jpg`, blob);
+  });
+
+  return zip.generateAsync({ type: 'blob', compression: 'STORE' });
+};
+
+// ─── Edit PDF ─────────────────────────────────────────────────────────────────
+
+/**
+ * Parses a CSS hex color string and returns an rgb() value for pdf-lib.
+ * Supports both '#rrggbb' and '#rgb' shorthand.
+ */
+function hexToRgb(hex: string): ReturnType<typeof rgb> {
+  const clean = hex.replace('#', '');
+  const full = clean.length === 3
+    ? clean.split('').map(c => c + c).join('')
+    : clean;
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  return rgb(r, g, b);
+}
+
+/**
+ * Burns a list of annotations into a PDF and returns the modified bytes.
+ * Coordinates in EditAnnotation are normalized 0–1 (top-left origin, UI space)
+ * and are converted to pdf-lib's bottom-left coordinate space here.
+ *
+ * @param file        - The source PDF File.
+ * @param annotations - The annotations to draw.
+ * @returns           Modified PDF bytes.
+ */
+export const editPdf = async (file: File, annotations: EditAnnotation[]): Promise<Uint8Array> => {
+  const pdfBytes = await file.arrayBuffer();
+  const doc = await PDFDocument.load(pdfBytes);
+  const pages = doc.getPages();
+
+  // Embed a font once – reused for all text annotations
+  const helvetica = await doc.embedFont(StandardFonts.Helvetica);
+
+  for (const ann of annotations) {
+    const pageIndex = ann.page - 1;
+    if (pageIndex < 0 || pageIndex >= pages.length) continue;
+
+    const page = pages[pageIndex];
+    const { width: pw, height: ph } = page.getSize();
+
+    // Convert normalized coords to pdf-lib pts (bottom-left origin)
+    const xPt = ann.x * pw;
+    const yPt = (1 - ann.y - ann.height) * ph; // flip Y axis
+    const wPt = ann.width * pw;
+    const hPt = ann.height * ph;
+
+    const strokeColor = ann.strokeColor ? hexToRgb(ann.strokeColor) : rgb(0, 0, 0);
+    const fillColor   = ann.fillColor   ? hexToRgb(ann.fillColor)   : undefined;
+    const fontColor   = ann.fontColor   ? hexToRgb(ann.fontColor)   : rgb(0, 0, 0);
+    const strokeWidth = ann.strokeWidth ?? 1;
+
+    switch (ann.type) {
+      case 'text': {
+        const fontSize = ann.fontSize ?? 14;
+        page.drawText(ann.text ?? '', {
+          x: xPt,
+          y: yPt + hPt, // top-left of bounding box in pdf-lib space
+          size: fontSize,
+          font: helvetica,
+          color: fontColor,
+          maxWidth: wPt,
+        });
+        break;
+      }
+
+      case 'rect': {
+        page.drawRectangle({
+          x: xPt,
+          y: yPt,
+          width: wPt,
+          height: hPt,
+          borderColor: strokeColor,
+          borderWidth: strokeWidth,
+          ...(fillColor ? { color: fillColor } : { opacity: 0 }),
+        });
+        break;
+      }
+
+      case 'circle': {
+        page.drawEllipse({
+          x: xPt + wPt / 2,
+          y: yPt + hPt / 2,
+          xScale: wPt / 2,
+          yScale: hPt / 2,
+          borderColor: strokeColor,
+          borderWidth: strokeWidth,
+          ...(fillColor ? { color: fillColor } : { opacity: 0 }),
+        });
+        break;
+      }
+
+      case 'image': {
+        if (!ann.imageDataUrl) break;
+        try {
+          let embeddedImage;
+          if (ann.imageDataUrl.startsWith('data:image/png')) {
+            const base64 = ann.imageDataUrl.split(',')[1];
+            embeddedImage = await doc.embedPng(
+              Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+            );
+          } else {
+            const base64 = ann.imageDataUrl.split(',')[1];
+            embeddedImage = await doc.embedJpg(
+              Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+            );
+          }
+          page.drawImage(embeddedImage, { x: xPt, y: yPt, width: wPt, height: hPt });
+        } catch {
+          console.warn('Failed to embed image annotation – skipping.');
+        }
+        break;
+      }
+    }
+  }
+
+  return doc.save();
+};
+
+// ─── Protect PDF ──────────────────────────────────────────────────────────────
+
+/**
+ * Adds user and owner passwords to a PDF and optionally restricts permissions.
+ *
+ * @param file           - The source PDF File.
+ * @param userPassword   - Password required to open the document.
+ * @param ownerPassword  - Password that grants full access (defaults to userPassword if omitted).
+ * @param permissions    - Granular permission flags.
+ * @returns              Encrypted PDF bytes.
+ */
+export const protectPdf = async (
+  file: File,
+  userPassword: string,
+  ownerPassword: string,
+  permissions: PdfPermissions,
+): Promise<Uint8Array> => {
+  const pdfBytes = await file.arrayBuffer();
+  const doc = await PDFDocument.load(pdfBytes);
+
+  // doc.encrypt() applies RC4-128 / AES-256 encryption before save.
+  // Permissions map directly to PDF spec flags.
+  doc.encrypt({
+    userPassword,
+    ownerPassword: ownerPassword.trim() || userPassword,
+    permissions: {
+      printing:            permissions.printing   ? 'highResolution' : false,
+      copying:             permissions.copying,
+      annotating:          permissions.annotating,
+      modifying:           permissions.modifying,
+      fillingForms:        permissions.annotating,   // follows the annotation toggle
+      contentAccessibility: true,                    // always on — required by WCAG
+      documentAssembly:    permissions.modifying,    // follows the modification toggle
+    },
+  });
+
+  return doc.save();
+};
+
+// ─── Unlock PDF ───────────────────────────────────────────────────────────────
+
+/**
+ * Classifies a thrown error as a password-related failure (wrong, missing, or
+ * encrypted PDF) vs. a structural / IO error. Used by the UI to show a password
+ * prompt instead of a generic error message.
+ */
+export const isPasswordError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  // @cantoo/pdf-lib throws "Password incorrect" or "NEEDS PASSWORD"
+  return (
+    msg === 'password incorrect' ||
+    msg === 'needs password' ||
+    msg.includes('password') ||
+    msg.includes('encrypted') ||
+    msg.includes('decrypt')
+  );
+};
+
+/**
+ * Removes ALL password protection and restrictions from a PDF.
+ *
+ * Strategy:
+ *  • Attempts to load with `password` (empty string by default).
+ *  • Owner-restricted PDFs (no open password) succeed instantly with ''.
+ *  • User-password PDFs require the correct password to be passed.
+ *  • Saving WITHOUT calling doc.encrypt() strips every encryption entry from
+ *    the PDF trailer, producing a fully unlocked, unrestricted file.
+ *
+ * @throws When the password is wrong or missing — caller should use
+ *         `isPasswordError` to distinguish from other failures.
+ */
+export const unlockPdf = async (file: File, password = ''): Promise<Uint8Array> => {
+  // Copy into a plain Uint8Array — avoids SharedArrayBuffer restrictions in
+  // cross-origin-isolated browser contexts.
+  const pdfBytes = new Uint8Array(await file.arrayBuffer());
+  const doc = await PDFDocument.load(pdfBytes, { password });
+  // No encrypt() call → outputs a plain, fully unlocked PDF.
+  return doc.save();
+};
+
+// ─── PDF Preview helpers (for Edit PDF UI) ───────────────────────────────────
+
+/**
+ * Simple in-memory cache: avoids re-loading the same PDF document when the
+ * user navigates between pages. Key = "name-size-lastModified".
+ */
+const _pdfDocCache = new Map<string, pdfjs.PDFDocumentProxy>();
+
+const _getCachedDoc = async (file: File): Promise<pdfjs.PDFDocumentProxy> => {
+  const key = `${file.name}-${file.size}-${file.lastModified}`;
+  const cached = _pdfDocCache.get(key);
+  if (cached) return cached;
+  const arrayBuffer = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  _pdfDocCache.set(key, doc);
+  return doc;
+};
+
+/** Returns the total number of pages in a PDF file. */
+export const getPdfPageCount = async (file: File): Promise<number> => {
+  const doc = await _getCachedDoc(file);
+  return doc.numPages;
+};
+
+/**
+ * Renders one page of a PDF to a PNG data URL using pdfjs-dist.
+ * Uses a regular <canvas> element so the result is compatible with any
+ * environment (no OffscreenCanvas required here).
+ *
+ * @param file    - The PDF File to render.
+ * @param pageNum - 1-indexed page number.
+ * @param scale   - Render scale (default 1.5 — good balance of quality vs speed).
+ * @returns       PNG data URL string.
+ */
+export const renderPdfPagePreview = async (
+  file: File,
+  pageNum: number,
+  scale = 1.5,
+): Promise<string> => {
+  const doc = await _getCachedDoc(file);
+  const page = await doc.getPage(pageNum);
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  const ctx = canvas.getContext('2d')!;
+
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL('image/png');
 };
