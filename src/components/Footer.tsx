@@ -13,11 +13,11 @@ export const Footer = () => {
         </Link>
         
         <div className="flex items-center gap-8">
-          {['Privacy', 'Terms', 'Contact', 'API'].map((item) => (
+          {/* {['Privacy', 'Terms', 'Contact', 'API'].map((item) => (
             <a key={item} href="#" className="text-xs font-bold tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors uppercase">
               {item}
             </a>
-          ))}
+          ))} */}
           <Link 
             to="/team"
             className={`text-xs font-bold tracking-widest transition-colors uppercase ${

@@ -40,6 +40,14 @@ export const Header = () => {
           Pricing
         </Link>
         <Link 
+          to="/login"
+          className={`text-[11px] font-bold tracking-widest transition-colors uppercase ${
+            location.pathname === '/login' ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-900'
+          }`}
+        >
+          Login
+        </Link>
+        <Link 
           to="/"
           className="p-1 hover:bg-zinc-100 rounded-md transition-colors"
         >

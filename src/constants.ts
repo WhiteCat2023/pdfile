@@ -10,6 +10,12 @@ import {
 } from 'lucide-react';
 import { Tool, Contributor } from './types';
 
+import BerndtDennisCanaya from './assets/Berndt_Dennis_Canaya.png'
+import EthanGabrielRolloque from './assets/Ethan_Gabriel_Rolloque.png';
+import LanceKeithFajardo from './assets/Lance_Keith_Fajardo.png';
+import ArlJacobNecesario from './assets/Arl_Jacob_Necesario.png';
+import JosiahEphraimLago from './assets/Josiah_Ephraim_Lago.png'
+
 export const PDF_TOOLS: Tool[] = [
   { id: 'merge', name: 'Merge PDF', icon: Merge, description: 'Combine multiple PDFs into one document.', category: 'merge' },
   { id: 'split', name: 'Split PDF', icon: Split, description: 'Extract pages or split into multiple files.', category: 'split' },
@@ -24,9 +30,9 @@ export const PDF_TOOLS: Tool[] = [
 
 export const CONTRIBUTORS: Contributor[] = [
   {
-    name: "Berndt Dennis F. Canaua",
+    name: "Berndt Dennis F. Canaya",
     role: "Lead Full Stack Developer",
-    image: "https://picsum.photos/seed/alex/200/200",
+    image: BerndtDennisCanaya,
     bio: "Full-stack engineer with a passion for high-performance web applications and document processing systems.",
     social: { 
       github: "https://github.com/WhiteCat2023", 
@@ -36,7 +42,7 @@ export const CONTRIBUTORS: Contributor[] = [
   {
     name: "Ethan Gabriel T. Rolloque",
     role: "Assistant Full Stack Developer",
-    image: "https://picsum.photos/seed/alex/200/200",
+    image: EthanGabrielRolloque,
     bio: "A passionate junior developer with a strong interest in building clean, functional, and user-friendly websites.",
     social: { 
       github: "https://github.com/WhiteCat2023", 
@@ -46,7 +52,7 @@ export const CONTRIBUTORS: Contributor[] = [
   {
     name: "Lance Keith Fajardo",
     role: "UI/UX Designer",
-    image: "https://picsum.photos/seed/sarah/200/200",
+    image: LanceKeithFajardo,
     bio: "Crafting intuitive and beautiful user experiences. Focused on making complex tools accessible to everyone.",
     social: { 
       twitter: "#", 
@@ -55,14 +61,14 @@ export const CONTRIBUTORS: Contributor[] = [
   {
     name: "Arl Jacob Necesario",
     role: "UI/UX Designer",
-    image: "https://picsum.photos/seed/marcus/200/200",
+    image: ArlJacobNecesario,
     bio: "Specialist in distributed systems and secure data handling. Ensuring PDFile is fast and safe.",
     social: { github: "#", linkedin: "#" }
   },
   {
     name: "Josiah Ephraim Lago",
     role: "UI/UX Designer",
-    image: "https://picsum.photos/seed/elena/200/200",
+    image: JosiahEphraimLago,
     bio: "Animation enthusiast and React expert. Bringing the PDFile interface to life with smooth interactions.",
     social: { github: "#", twitter: "#" }
   }

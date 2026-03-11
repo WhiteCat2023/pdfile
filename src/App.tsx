@@ -9,6 +9,8 @@ import { CategoryPage } from './Pages/CategoryPage';
 import { TeamPage } from './Pages/TeamPage';
 import ProofreadingPage from './Pages/ProofreadingPage';
 import PricingPage from './Pages/PricingPage';
+import { LoginPage } from './Pages/LoginPage';
+import { SignupPage } from './Pages/SignupPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 
@@ -33,6 +35,8 @@ export default function App() {
               <Route path="/team" element={<TeamPage contributors={CONTRIBUTORS} />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/proofreading" element={<ProofreadingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               <Route path="/merge" element={<CategoryPage category="merge" tools={PDF_TOOLS.filter(t => t.category === 'merge')} />} />
               <Route path="/split" element={<CategoryPage category="split" tools={PDF_TOOLS.filter(t => t.category === 'split')} />} />
               <Route path="/convert" element={<CategoryPage category="convert" tools={PDF_TOOLS.filter(t => t.category === 'convert')} />} />
