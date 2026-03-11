@@ -24,29 +24,44 @@ export const PDF_TOOLS: Tool[] = [
 
 export const CONTRIBUTORS: Contributor[] = [
   {
-    name: "Alex Rivera",
-    role: "Lead Developer",
+    name: "Berndt Dennis F. Canaua",
+    role: "Lead Full Stack Developer",
     image: "https://picsum.photos/seed/alex/200/200",
     bio: "Full-stack engineer with a passion for high-performance web applications and document processing systems.",
-    social: { github: "#", twitter: "#", linkedin: "#" }
+    social: { 
+      github: "https://github.com/WhiteCat2023", 
+      twitter: "#", 
+      linkedin: "#" }
   },
   {
-    name: "Sarah Chen",
+    name: "Ethan Gabriel T. Rolloque",
+    role: "Assistant Full Stack Developer",
+    image: "https://picsum.photos/seed/alex/200/200",
+    bio: "A passionate junior developer with a strong interest in building clean, functional, and user-friendly websites.",
+    social: { 
+      github: "https://github.com/WhiteCat2023", 
+      twitter: "#", 
+      linkedin: "https://www.linkedin.com/feed/" }
+  },
+  {
+    name: "Lance Keith Fajardo",
     role: "UI/UX Designer",
     image: "https://picsum.photos/seed/sarah/200/200",
     bio: "Crafting intuitive and beautiful user experiences. Focused on making complex tools accessible to everyone.",
-    social: { twitter: "#", linkedin: "#" }
+    social: { 
+      twitter: "#", 
+      linkedin: "#" }
   },
   {
-    name: "Marcus Thorne",
-    role: "Backend Architect",
+    name: "Arl Jacob Necesario",
+    role: "UI/UX Designer",
     image: "https://picsum.photos/seed/marcus/200/200",
     bio: "Specialist in distributed systems and secure data handling. Ensuring PDFile is fast and safe.",
     social: { github: "#", linkedin: "#" }
   },
   {
-    name: "Elena Vance",
-    role: "Frontend Engineer",
+    name: "Josiah Ephraim Lago",
+    role: "UI/UX Designer",
     image: "https://picsum.photos/seed/elena/200/200",
     bio: "Animation enthusiast and React expert. Bringing the PDFile interface to life with smooth interactions.",
     social: { github: "#", twitter: "#" }
