@@ -1,5 +1,5 @@
 
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FileIcon, Trash2 } from 'lucide-react';
 
 interface FileListProps {

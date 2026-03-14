@@ -2,23 +2,30 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 import { ParticleBackground } from '../components/ParticleBackground';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add actual login logic here
-    console.log('Logging in with:', { email, password });
-    navigate('/'); // Redirect to home after login
+    setError('');
+    try {
+      await login(email, password);
+      navigate('/'); // Redirect to home after login
+    } catch (error) {
+      setError('Failed to log in');
+      console.error(error);
+    }
   };
 
   return (
-
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -34,6 +41,7 @@ export function LoginPage() {
               <p className="mt-2 text-sm text-zinc-600">
                 Sign in to continue to your PDFile account.
               </p>
+              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             </div>
             <form className="space-y-6" onSubmit={handleLogin}>
               <div className="relative">
@@ -89,6 +97,5 @@ export function LoginPage() {
           </div>
         </div>
       </motion.div>
-
   );
 }

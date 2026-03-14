@@ -2,11 +2,11 @@
 import { PDFDocument, rgb, StandardFonts } from '@cantoo/pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
 import JSZip from 'jszip';
-import type { EditAnnotation, PdfPermissions } from '../types';
+import mammoth from 'mammoth';
+import type { EditAnnotation, PdfPermissions, CompressionLevel } from '../types';
 
-// Configure pdfjs worker (resolved by bundler at build time, no CDN dependency)
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
+// Configure pdfjs worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   const mergedPdf = await PDFDocument.create();
@@ -85,21 +85,43 @@ export const extractPages = async (file: File, pagesStr: string): Promise<Uint8A
 };
 
 
-// Placeholder for compress and convert, as they are more complex
-export const compressPdf = async (file: File): Promise<Uint8Array> => {
-  console.log("Compressing PDF...", file.name);
+export const compressPdf = async (file: File, level: CompressionLevel): Promise<Uint8Array> => {
+  console.log(`Compressing PDF with level: ${level}...`, file.name);
   // pdf-lib does not have a direct compression feature of the kind users might expect (re-encoding images etc)
   // This would require a more powerful library, likely on a server or via a service.
-  // For now, we will just return the original file bytes.
+  // For now, we will just return the original file bytes as a placeholder.
   return new Uint8Array(await file.arrayBuffer());
 };
 
-export const convertPdf = async (file: File, toFormat: string): Promise<Blob> => {
-  console.log("Converting PDF...", file.name, toFormat);
-  // pdf-lib is for PDF manipulation, not conversion to other formats like JPG, Word, etc.
-  // This would require a separate library or service.
-  // We will return a dummy blob for now.
-  return new Blob([`Dummy conversion of ${file.name} to ${toFormat}`], { type: 'text/plain' });
+export const pdfToWord = async (file: File): Promise<Blob> => {
+    console.log("Converting PDF to Word...", file.name);
+    // This is a placeholder. Real PDF to Word conversion is very complex
+    // and would likely require a server-side service.
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    let textContent = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const text = await page.getTextContent();
+        textContent += text.items.map(item => (item as any).str).join(' ');
+        textContent += '\n';
+    }
+
+    return new Blob([textContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+};
+
+export const wordToPdf = async (file: File): Promise<Uint8Array> => {
+    console.log("Converting Word to PDF...", file.name);
+    const arrayBuffer = await file.arrayBuffer();
+    const { value } = await mammoth.extractRawText({ arrayBuffer });
+    
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    page.drawText(value);
+
+    return pdfDoc.save();
 };
 
 // ─── PDF to JPG ───────────────────────────────────────────────────────────────
@@ -134,7 +156,7 @@ export const pdfToJpg = async (file: File, quality = 0.92): Promise<Blob[]> => {
 
     if (!ctx) throw new Error(`Could not get 2D context for page ${pageNum}.`);
 
-    await page.render({ canvasContext: ctx as unknown as CanvasRenderingContext2D, canvas: canvas as unknown as HTMLCanvasElement,  viewport }).promise;
+    await page.render({ canvasContext: ctx as unknown as CanvasRenderingContext2D, viewport }).promise;
 
     const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
     blobs.push(blob);
@@ -411,7 +433,6 @@ export const renderPdfPagePreview = async (
   canvas.height = Math.round(viewport.height);
   const ctx = canvas.getContext('2d')!;
 
-  await page.render({ canvasContext: ctx, canvas: canvas, viewport }).promise;
+  await page.render({ canvasContext: ctx, viewport }).promise;
   return canvas.toDataURL('image/png');
 };
- 

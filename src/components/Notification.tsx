@@ -1,5 +1,5 @@
 
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { X, Info, AlertTriangle } from 'lucide-react';
 import { useEffect } from 'react';
 

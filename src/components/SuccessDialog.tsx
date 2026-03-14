@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { CheckCircle2, Download, Share2 } from 'lucide-react';
 
 interface SuccessDialogProps {

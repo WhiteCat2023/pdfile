@@ -57,3 +57,7 @@ export interface PdfPermissions {
   modifying: boolean;
   annotating: boolean;
 }
+
+// ─── Compress PDF types ───────────────────────────────────────────────────────
+
+export type CompressionLevel = 'low' | 'medium' | 'high';

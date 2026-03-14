@@ -1,8 +1,22 @@
 
 import React from 'react';
 import { Check, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const PricingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  const handleUpgrade = () => {
+    if (currentUser) {
+      // In a real app, you would redirect to a payment page
+      alert('Redirecting to payment...');
+    } else {
+      navigate('/signup');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8">Pricing Plans</h1>
@@ -36,7 +50,10 @@ const PricingPage: React.FC = () => {
             <li className='flex items-center gap-4'><Check/> Advanced Analytics</li>
             <li className='flex items-center gap-4'><Check/> Priority Support</li>
           </ul>
-          <button className="w-full bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors font-bold text-lg">
+          <button 
+            onClick={handleUpgrade}
+            className="w-full bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors font-bold text-lg"
+          >
             Upgrade to Pro
           </button>
         </div>

@@ -2,24 +2,39 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, User } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase'; // Import db from firebase
+import { setDoc, doc } from 'firebase/firestore'; // Import setDoc and doc
 import { ParticleBackground } from '../components/ParticleBackground';
 
 export function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add actual signup logic here
-    console.log('Signing up with:', { name, email, password });
-    navigate('/'); // Redirect to home after signup
+    setError('');
+    try {
+      const userCredential = await signup(email, password);
+      const user = userCredential.user;
+      // Create a document in Firestore for the new user
+      await setDoc(doc(db, 'users', user.uid), {
+        name: name,
+        email: email,
+      });
+      navigate('/'); // Redirect to home after signup
+    } catch (error) {
+      setError('Failed to create an account');
+      console.error(error);
+    }
   };
 
   return (
-
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -35,6 +50,7 @@ export function SignupPage() {
               <p className="mt-2 text-sm text-zinc-600">
                 Get started with your free PDFile account.
               </p>
+              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             </div>
             <form className="space-y-6" onSubmit={handleSignup}>
               <div className="relative">

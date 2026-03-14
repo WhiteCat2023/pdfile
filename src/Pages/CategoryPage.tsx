@@ -1,5 +1,5 @@
 
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tool } from '../types';

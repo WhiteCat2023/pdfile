@@ -1,4 +1,5 @@
-import { motion } from 'motion/react';
+
+import { motion } from 'framer-motion';
 import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
 import { Contributor } from '../types';
 

@@ -5,9 +5,10 @@ import { Upload } from 'lucide-react';
 interface FileUploadProps {
   onFiles: (files: FileList) => void;
   allowsMultipleFiles: boolean;
+  accept: string;
 }
 
-export function FileUpload({ onFiles, allowsMultipleFiles }: FileUploadProps) {
+export function FileUpload({ onFiles, allowsMultipleFiles, accept }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,14 +28,14 @@ export function FileUpload({ onFiles, allowsMultipleFiles }: FileUploadProps) {
         ref={fileInputRef}
         onChange={(e) => e.target.files && onFiles(e.target.files)}
         multiple={allowsMultipleFiles}
-        accept=".pdf"
+        accept={accept}
         className="hidden"
       />
       <div className="p-6 bg-zinc-50 rounded-full text-zinc-400">
         <Upload size={48} strokeWidth={1} />
       </div>
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 mb-2">Drop your PDF{allowsMultipleFiles ? 's' : ''} here</h2>
+        <h2 className="text-2xl font-bold text-zinc-900 mb-2">Drop your file{allowsMultipleFiles ? 's' : ''} here</h2>
         <p className="text-zinc-500 text-sm">or click to browse your files</p>
       </div>
     </div>

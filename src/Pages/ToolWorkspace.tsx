@@ -1,10 +1,10 @@
 
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Zap, Unlock, Lock } from 'lucide-react';
 import { saveAs } from 'file-saver';
-import { Tool, EditAnnotation, AnnotationMode } from '../types';
+import { Tool, EditAnnotation, AnnotationMode, CompressionLevel } from '../types';
 import {
   mergePdfs,
   splitPdf,
@@ -16,14 +16,20 @@ import {
   isPasswordError,
   getPdfPageCount,
   renderPdfPagePreview,
+  compressPdf,
+  pdfToWord,
+  wordToPdf,
 } from '../utils/pdf';
+import { useUsage } from '../contexts/UsageContext';
 import { SuccessDialog } from '../components/SuccessDialog';
 import { Notification } from '../components/Notification';
+import { UpgradeModal } from '../components/UpgradeModal';
 import { PDF_TOOLS } from '../constants';
 import { ToolHeader } from './Subpage/ToolHeader';
 import { FileUpload } from './Subpage/FileUpload';
 import { FileList } from './Subpage/FileList';
 import { SplitOptions } from './Subpage/SplitOptions';
+import { CompressOptions } from './Subpage/CompressOptions';
 import { ProtectPassword } from './Subpage/ProtectPassword';
 import { UnlockPassword } from './Subpage/UnlockPassword';
 import { EditContainer } from './Subpage/EditContainer';
@@ -58,10 +64,13 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [splitOption, setSplitOption] = useState('ranges'); // 'ranges' or 'extract'
   const [splitRanges, setSplitRanges] = useState('');
+  const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('medium');
   const [notification, setNotification] = useState<{ message: string, type: 'error' | 'info' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isLimitReached, recordUsage } = useUsage();
 
   // ── Protect PDF state ─────────────────────────────────────────────────────
   const [protectUserPwd, setProtectUserPwd] = useState('');
@@ -81,18 +90,35 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
   const dragStateRef = useRef<DragState | null>(null);
 
   const allowsMultipleFiles = useMemo(() => tool.category === 'merge', [tool.category]);
+  const acceptFileType = useMemo(() => {
+      if (tool.id === 'word-to-pdf') {
+          return '.docx';
+      }
+      return '.pdf';
+  }, [tool.id]);
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
-    const pdfFiles = Array.from(newFiles).filter(file => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+    const acceptedFiles = Array.from(newFiles).filter(file => {
+        const lowerCaseName = file.name.toLowerCase();
+        if (tool.id === 'word-to-pdf') {
+            return lowerCaseName.endsWith('.docx');
+        }
+        return lowerCaseName.endsWith('.pdf');
+    });
+
+    if (acceptedFiles.length === 0 && newFiles.length > 0) {
+      showNotification(`Please upload a ${acceptFileType} file.`, 'error');
+      return;
+    }
     
     if (allowsMultipleFiles) {
-      setFiles(prev => [...prev, ...pdfFiles]);
+      setFiles(prev => [...prev, ...acceptedFiles]);
     } else {
-      setFiles(pdfFiles.slice(0, 1));
+      setFiles(acceptedFiles.slice(0, 1));
     }
     // Reset unlock prompt whenever a new file is selected
-    if (tool.id === 'unlock' && pdfFiles.length > 0) {
+    if (tool.id === 'unlock' && acceptedFiles.length > 0) {
       setShowUnlockPwdField(false);
       setUnlockPwd('');
     }
@@ -207,6 +233,11 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
 
   const handleProcess = async () => {
     if (files.length === 0) return;
+    if (isLimitReached) {
+        setShowUpgradeModal(true);
+        return;
+    }
+
     setIsProcessing(true);
     setNotification(null);
 
@@ -250,12 +281,36 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
             setIsProcessing(false);
             return;
           }
-          showNotification('The compress feature is not yet implemented.');
-          success = false;
+          const compressedPdf = await compressPdf(files[0], compressionLevel);
+          saveAs(pdfBlob(compressedPdf), `compressed-${files[0].name}`);
+          success = true;
           break;
         }
 
-        case 'pdf-to-word':
+        case 'pdf-to-word': {
+            if (files.length !== 1) {
+                showNotification('Please select one PDF to convert.', 'error');
+                setIsProcessing(false);
+                return;
+            }
+            const wordBlob = await pdfToWord(files[0]);
+            saveAs(wordBlob, `${files[0].name.replace('.pdf', '')}.docx`);
+            success = true;
+            break;
+        }
+
+        case 'word-to-pdf': {
+            if (files.length !== 1) {
+                showNotification('Please select one Word document to convert.', 'error');
+                setIsProcessing(false);
+                return;
+            }
+            const pdfBytes = await wordToPdf(files[0]);
+            saveAs(pdfBlob(pdfBytes), `${files[0].name.replace(/\.docx$/, '')}.pdf`);
+            success = true;
+            break;
+        }
+
         case 'pdf-to-excel':
         case 'pdf-to-ppt': {
           showNotification(`The ${tool.name} feature is not yet implemented.`);
@@ -349,9 +404,11 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
       }
 
       if (success) {
+        recordUsage();
         setShowSuccess(true);
         setFiles([]);
         setSplitRanges('');
+        setCompressionLevel('medium');
         // Reset per-tool form state
         setProtectUserPwd('');
         setUnlockPwd('');
@@ -398,6 +455,9 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
             onClose={() => setShowSuccess(false)} 
           />
         )}
+        {showUpgradeModal && (
+            <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+        )}
       </AnimatePresence>
 
       <ToolHeader 
@@ -414,7 +474,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           ref={fileInputRef}
           onChange={(e) => handleFiles(e.target.files)}
           multiple={allowsMultipleFiles}
-          accept=".pdf"
+          accept={acceptFileType}
           className="hidden"
         />
         
@@ -440,6 +500,10 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
           </div>
         )}
 
+        {tool.id === 'compress' && files.length > 0 && (
+          <CompressOptions level={compressionLevel} onLevelChange={setCompressionLevel} />
+        )}
+
         {tool.id === 'protect' && files.length > 0 && (
           <ProtectPassword 
             password={protectUserPwd} 
@@ -457,7 +521,7 @@ export function ToolWorkspace({ tool, onBack }: ToolWorkspaceProps) {
         )}
 
         {files.length === 0 ? (
-          <FileUpload onFiles={(files) => handleFiles(files)} allowsMultipleFiles={allowsMultipleFiles} />
+          <FileUpload onFiles={(files) => handleFiles(files)} allowsMultipleFiles={allowsMultipleFiles} accept={acceptFileType} />
         ) : tool.id === 'edit' ? (
           <EditContainer 
             annotations={annotations}
