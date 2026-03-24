@@ -1,28 +1,67 @@
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { diff_match_patch, Diff } from 'diff-match-patch';
+
+import { generateText } from '../utils/gemini';
+import { useUsage } from '../contexts/UsageContext';
+import { UpgradeModal } from '../components/UpgradeModal';
 
 const ProofreadingPage = () => {
   const [text, setText] = useState('');
-  const [correctedText, setCorrectedText] = useState('');
+  const [diffs, setDiffs] = useState<Diff[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const handleProofread = () => {
+  const { isLimitReached, recordUsage } = useUsage();
+
+  const dmp = useMemo(() => new diff_match_patch(), []);
+
+  const handleProofread = useCallback(async () => {
+    if (isLimitReached) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsLoading(true);
-    setCorrectedText('');
-    // Simulate API call to a proofreading service
-    setTimeout(() => {
-      // Simple mock correction logic
-      const mockCorrected = text
-        .replace(/teh/gi, 'the')
-        .replace(/wierd/gi, 'weird')
-        .replace(/ a lot/gi, ' many')
-        .replace(/, and/gi, ' and')
-        .replace(/ i /gi, ' I ')
-        .trim();
-      setCorrectedText(`This is a mock correction. In a real application, this would be processed by an AI.\n\nOriginal: ${text}\n\nCorrected: ${mockCorrected}`);
+    setDiffs(null);
+    setError(null);
+
+    try {
+      const prompt = `Proofread the following text for grammar, spelling, punctuation, and style. Only return the corrected text, without any additional comments, explanations, or introductory phrases. The user expects to see only their text, but corrected.\n\nOriginal Text:\n"""\n${text}\n"""`;
+
+      const correctedText = await generateText(prompt);
+
+      const calculatedDiffs = dmp.diff_main(text, correctedText);
+      dmp.diff_cleanupSemantic(calculatedDiffs);
+      
+      setDiffs(calculatedDiffs);
+      recordUsage();
+
+    } catch (err) {
+      console.error("Error proofreading text:", err);
+      setError("An error occurred while communicating with the AI. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  }, [text, dmp, isLimitReached, recordUsage]);
+
+  const renderDiffs = () => {
+    if (!diffs) return null;
+
+    return diffs.map(([op, data], index) => {
+      switch (op) {
+        case 1: // Insert
+          return <span key={index} className="bg-green-100 text-green-800">{data}</span>;
+        case -1: // Delete
+          return <span key={index} className="bg-red-100 text-red-800 line-through">{data}</span>;
+        case 0: // Equal
+          return <span key={index}>{data}</span>;
+        default:
+          return null;
+      }
+    });
   };
 
   return (
@@ -31,15 +70,16 @@ const ProofreadingPage = () => {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto"
     >
+      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
       <div className="text-center mb-12">
         <h1 className="text-5xl font-black tracking-tight uppercase mb-4">AI Proofreader</h1>
-        <p className="text-zinc-500 font-medium max-w-2xl mx-auto">Paste your text below to have it proofread by our advanced AI. Note: This is a mock implementation.</p>
+        <p className="text-zinc-500 font-medium max-w-2xl mx-auto">Paste your text below to have it proofread by our advanced AI for grammar, spelling, punctuation, and style.</p>
       </div>
 
       <div className="bg-white p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-zinc-100">
         <textarea
           className="w-full h-48 p-4 border border-zinc-200 bg-zinc-50 rounded-lg focus:ring-zinc-500 focus:border-zinc-500 transition-all shadow-sm"
-          placeholder="Enter text to proofread... For example: Teh wierd text had a lot of mistakes, and i wanted to fix them."
+          placeholder="For example: teh wierd text had a lot of mistakes, and i wanted to fix them."
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -58,11 +98,17 @@ const ProofreadingPage = () => {
           )}
         </button>
 
-        {correctedText && (
+        {error && (
+            <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+                <p>{error}</p>
+            </div>
+        )}
+
+        {diffs && (
           <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-2">Correction</h2>
-            <div className="bg-zinc-50 p-4 rounded-lg border border-zinc-200 whitespace-pre-wrap font-mono text-sm">
-              <p>{correctedText}</p>
+            <h2 className="text-2xl font-bold mb-4">Corrections</h2>
+            <div className="bg-zinc-50 p-6 rounded-lg border border-zinc-200 whitespace-pre-wrap text-lg leading-relaxed">
+              <p>{renderDiffs()}</p>
             </div>
           </div>
         )}

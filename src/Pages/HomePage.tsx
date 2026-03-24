@@ -40,7 +40,7 @@ export function HomePage({ tools }: HomePageProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ y: -4 }}
-              className="group relative bg-white rounded-2xl p-8 border border-zinc-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all cursor-pointer overflow-hidden h-full"
+              className="group relative bg-white rounded-2xl p-8 border border-zinc-100 shadow-lg hover:shadow-2xl transition-all cursor-pointer overflow-hidden h-full"
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-zinc-900 scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
               

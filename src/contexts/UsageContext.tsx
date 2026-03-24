@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 interface UsageData {
   count: number;
@@ -23,63 +24,78 @@ export const useUsage = (): UsageContextType => {
   return context;
 };
 
-const USAGE_LIMIT = 10;
-const STORAGE_KEY = 'dailyUsage';
+interface UsageProviderProps {
+    children: ReactNode;
+}
 
-export const UsageProvider = ({ children }: { children: ReactNode }) => {
-  const [usageCount, setUsageCount] = useState(0);
-  const [isLimitReached, setIsLimitReached] = useState(false);
+export const UsageProvider = ({ children }: UsageProviderProps) => {
+    const { currentUser } = useAuth();
+    const [usageCount, setUsageCount] = useState(0);
+    const [usageLimit, setUsageLimit] = useState(5);
+    const [isLimitReached, setIsLimitReached] = useState(false);
 
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    let currentUsage: UsageData = { count: 0, date: today };
+    const getToday = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // YYYY-MM-DD
+    };
 
-    try {
-      const storedUsage = localStorage.getItem(STORAGE_KEY);
-      if (storedUsage) {
-        const parsedUsage: UsageData = JSON.parse(storedUsage);
-        if (parsedUsage.date === today) {
-          currentUsage = parsedUsage;
+    const getUsageData = useCallback((): UsageData => {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const storedUsage = localStorage.getItem('usageData');
+            if (storedUsage) {
+                try {
+                    const data: UsageData = JSON.parse(storedUsage);
+                    if (data.date === getToday()) {
+                        return data;
+                    }
+                } catch (error) {
+                    console.error("Error parsing usage data from localStorage", error);
+                }
+            }
+        }
+        return { count: 0, date: getToday() };
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser) {
+            const limit = 5;
+            setUsageLimit(limit);
+            const usageData = getUsageData();
+            setUsageCount(usageData.count);
+            setIsLimitReached(usageData.count >= limit);
         } else {
-          // Reset for the new day
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ count: 0, date: today }));
+            setUsageLimit(Infinity); // Unlimited for logged-in users
+            setUsageCount(0);
+            setIsLimitReached(false);
         }
-      } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUsage));
-      }
-    } catch (error) {
-      console.error("Failed to read from localStorage", error);
-    }
-    
-    setUsageCount(currentUsage.count);
-    setIsLimitReached(currentUsage.count >= USAGE_LIMIT);
-  }, []);
+    }, [currentUser, getUsageData]);
 
-  const recordUsage = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const newCount = usageCount + 1;
-    
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ count: newCount, date: today }));
-        setUsageCount(newCount);
-        if (newCount >= USAGE_LIMIT) {
-            setIsLimitReached(true);
+    const recordUsage = useCallback(() => {
+        if (!currentUser) {
+            const currentCount = usageCount;
+            if (currentCount < usageLimit) {
+                const newCount = currentCount + 1;
+                setUsageCount(newCount);
+                if (typeof window !== 'undefined' && window.localStorage) {
+                    localStorage.setItem('usageData', JSON.stringify({ count: newCount, date: getToday() }));
+                }
+                if (newCount >= usageLimit) {
+                    setIsLimitReached(true);
+                }
+            }
         }
-    } catch (error) {
-        console.error("Failed to write to localStorage", error);
-    }
-  }, [usageCount]);
+    }, [currentUser, usageCount, usageLimit]);
 
-  const value = {
-    usageCount,
-    usageLimit: USAGE_LIMIT,
-    recordUsage,
-    isLimitReached,
-  };
+    const value = {
+        usageCount,
+        usageLimit,
+        recordUsage,
+        isLimitReached,
+    };
 
-  return (
-    <UsageContext.Provider value={value}>
-      {children}
-    </UsageContext.Provider>
-  );
+    return (
+        <UsageContext.Provider value={value}>
+            {children}
+        </UsageContext.Provider>
+    );
 };

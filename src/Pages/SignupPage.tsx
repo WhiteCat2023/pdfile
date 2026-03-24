@@ -12,6 +12,7 @@ export function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { signup } = useAuth();
@@ -19,6 +20,10 @@ export function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!agreed) {
+      setError("You must agree to the terms and conditions.");
+      return;
+    }
     try {
       const userCredential = await signup(email, password);
       const user = userCredential.user;
@@ -44,7 +49,7 @@ export function SignupPage() {
       >
         <ParticleBackground/>
         <div className="flex justify-center">
-          <div className="w-full h-[500px] max-w-md p-8 space-y-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200">
+          <div className="w-full h-[550px] max-w-md p-8 space-y-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200">
             <div className="text-center">
               <h1 className="text-3xl font-bold text-zinc-900">Create an Account</h1>
               <p className="mt-2 text-sm text-zinc-600">
@@ -86,10 +91,24 @@ export function SignupPage() {
                   className="w-full pl-12 pr-4 py-3 text-sm text-zinc-900 bg-white/50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-500"
                 />
               </div>
+              <div className="flex items-center">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="h-4 w-4 text-zinc-600 focus:ring-zinc-500 border-gray-300 rounded"
+                />
+                <label htmlFor="terms" className="ml-2 block text-sm text-zinc-600">
+                  I agree to the <Link to="/terms" className="font-medium text-zinc-900 hover:underline">Terms of Service</Link> and <Link to="/privacy" className="font-medium text-zinc-900 hover:underline">Privacy Policy</Link>.
+                </label>
+              </div>
               <div>
                 <button
                   type="submit"
-                  className="w-full px-4 py-3 text-sm font-bold text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-colors"
+                  disabled={!agreed}
+                  className="w-full px-4 py-3 text-sm font-bold text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Account
                 </button>

@@ -12,6 +12,8 @@ import PricingPage from './Pages/PricingPage';
 import { LoginPage } from './Pages/LoginPage';
 import { SignupPage } from './Pages/SignupPage';
 import { ForgotPasswordPage } from './Pages/ForgotPasswordPage';
+import { TermsOfServicePage } from './Pages/TermsOfServicePage';
+import { PrivacyPolicyPage } from './Pages/PrivacyPolicyPage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { UsageProvider } from './contexts/UsageContext';
@@ -42,6 +44,8 @@ export default function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/terms" element={<TermsOfServicePage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
                   <Route path="/merge" element={<CategoryPage category="merge" tools={PDF_TOOLS.filter(t => t.category === 'merge')} />} />
                   <Route path="/split" element={<CategoryPage category="split" tools={PDF_TOOLS.filter(t => t.category === 'split')} />} />
                   <Route path="/convert" element={<CategoryPage category="convert" tools={PDF_TOOLS.filter(t => t.category === 'convert')} />} />
