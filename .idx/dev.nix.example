@@ -9,14 +9,14 @@
   ];
   # Sets environment variables in the workspace
   env = {
-    VITE_FIREBASE_API_KEY="AIzaSyCt8PzMzZXnw-ATL3VsmiVtZj1pXEwnK9Y";
-    VITE_FIREBASE_AUTH_DOMAIN="pdfile-83911832-94d65.firebaseapp.com";
-    VITE_FIREBASE_PROJECT_ID="pdfile-83911832-94d65";
-    VITE_FIREBASE_STORAGE_BUCKET="pdfile-83911832-94d65.firebasestorage.app";
-    VITE_FIREBASE_MESSAGING_SENDER_ID="744590200832";
-    VITE_FIREBASE_APP_ID="1:744590200832:web:f9e2066c9e4c6ba24148e5";
+    VITE_FIREBASE_API_KEY="your_api_key";
+    VITE_FIREBASE_AUTH_DOMAIN="your_auth_domain";
+    VITE_FIREBASE_PROJECT_ID="your_project_id";
+    VITE_FIREBASE_STORAGE_BUCKET="your_storage_bucket";
+    VITE_FIREBASE_MESSAGING_SENDER_ID="your_messaging_sender_id";
+    VITE_FIREBASE_APP_ID="your_app_id";
 
-    VITE_GEMINI_API_KEY = "AIzaSyD4Yhg8NaCwp9vr40ZuAz7kkfrcdRoUCFo";
+    VITE_GEMINI_API_KEY="your_gemini_api_key";
   };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
