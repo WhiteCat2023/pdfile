@@ -156,7 +156,7 @@ export const pdfToJpg = async (file: File, quality = 0.92): Promise<Blob[]> => {
 
     if (!ctx) throw new Error(`Could not get 2D context for page ${pageNum}.`);
 
-    await page.render({ canvasContext: ctx as unknown as CanvasRenderingContext2D, viewport }).promise;
+    await page.render({canvas: canvas as unknown as HTMLCanvasElement, canvasContext: ctx as unknown as CanvasRenderingContext2D, viewport }).promise;
 
     const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
     blobs.push(blob);
@@ -433,6 +433,6 @@ export const renderPdfPagePreview = async (
   canvas.height = Math.round(viewport.height);
   const ctx = canvas.getContext('2d')!;
 
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  await page.render({canvas, canvasContext: ctx, viewport }).promise;
   return canvas.toDataURL('image/png');
 };
