@@ -28,7 +28,7 @@ The JSON must follow this exact structure:
 
 // 2. Initialize the model once for efficiency
 const proofreaderModel = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.5-flash",
   // model: "gemini-2.5-flash",
   systemInstruction: proofreaderPrompt,
   generationConfig: {
