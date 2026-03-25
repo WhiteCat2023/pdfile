@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { proofreadText } from '../utils/gemini';
 import { useUsage } from '../contexts/UsageContext';
 import { UpgradeModal } from '../components/UpgradeModal';
+import { Copy, Check } from 'lucide-react';
 
 const ProofreadingPage = () => {
   const [text, setText] = useState('');
@@ -12,6 +13,7 @@ const ProofreadingPage = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [correctedText, setCorrectedText] = useState('');
   const [changesList, setChangesList] = useState<string[]>([]);
+    const [isCopied, setIsCopied] = useState(false);
 
   const { isLimitReached, recordUsage } = useUsage();
 
@@ -41,6 +43,12 @@ const ProofreadingPage = () => {
       setIsLoading(false);
     }
   }, [text, isLimitReached, recordUsage]);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(correctedText);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
   return (
     <motion.div
@@ -85,8 +93,16 @@ const ProofreadingPage = () => {
         {correctedText && (
           <div className="mt-6">
             <h2 className="text-2xl font-bold mb-4">Corrected Text</h2>
-            <div className="bg-zinc-50 p-6 rounded-lg border border-zinc-200 whitespace-pre-wrap text-lg leading-relaxed">
-              <p>{correctedText}</p>
+            <div className="relative bg-zinc-50 p-6 rounded-lg border border-zinc-200">
+              <button
+                onClick={handleCopy}
+                className="absolute top-2 right-2 p-2 bg-zinc-100 hover:bg-zinc-200 rounded-md transition-colors"
+               >
+                {isCopied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-zinc-400" />}
+              </button>
+              <div className="whitespace-pre-wrap text-lg leading-relaxed">
+                <p>{correctedText}</p>
+              </div>
             </div>
           </div>
         )}
