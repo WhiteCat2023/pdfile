@@ -4,16 +4,16 @@ This is a web-based PDF utility application built with React and Vite. It provid
 
 ## Core Features
 
-- **PDF Merging:** Combine multiple PDF files into a single document.
-- **PDF Splitting:** Split a PDF into multiple files by page ranges or by extracting specific pages.
-- **PDF Compression:** Reduce the file size of a PDF.
-- **PDF to Word:** Convert a PDF file to a Microsoft Word document.
-- **Word to PDF:** Convert a Microsoft Word document to a PDF file.
-- **PDF to JPG:** Convert each page of a PDF file to a JPG image.
-- **PDF Editing:** Add text, shapes, and images to a PDF file.
-- **PDF Protection:** Add a password to a PDF file to encrypt it.
-- **PDF Unlocking:** Remove a password from a PDF file.
-- **AI Proofreader:** Proofread text using an advanced AI for grammar, spelling, punctuation, and style.
+- 📄 **PDF Merging:** Combine multiple PDF files into a single document.
+- ✂️ **PDF Splitting:** Split a PDF into multiple files by page ranges or by extracting specific pages.
+-  छोटा **PDF Compression:** Reduce the file size of a PDF.
+- 🔄 **PDF to Word:** Convert a PDF file to a Microsoft Word document.
+- 🔄 **Word to PDF:** Convert a Microsoft Word document to a PDF file.
+- 🖼️ **PDF to JPG:** Convert each page of a PDF file to a JPG image.
+- ✏️ **PDF Editing:** Add text, shapes, and images to a PDF file.
+- 🔒 **PDF Protection:** Add a password to a PDF file to encrypt it.
+- 🔓 **PDF Unlocking:** Remove a password from a PDF file.
+- ✨ **AI Proofreader:** Proofread text using an advanced AI for grammar, spelling, punctuation, and style.
 
 ## File Structure
 
@@ -111,8 +111,17 @@ This is a web-based PDF utility application built with React and Vite. It provid
 
 This project was developed by a talented team of developers:
 
-- Arl Jacob Necesario
-- Berndt Dennis Canaya
-- Ethan Gabriel Rolloque
-- Josiah Ephraim Lago
-- Lance Keith Fajardo
+### Arl Jacob Necesario
+<img src="src/assets/Arl_Jacob_Necesario.png" width="150" />
+
+### Berndt Dennis Canaya
+<img src="src/assets/Berndt_Dennis_Canaya.png" width="150" />
+
+### Ethan Gabriel Rolloque
+<img src="src/assets/Ethan_Gabriel_Rolloque.png" width="150" />
+
+### Josiah Ephraim Lago
+<img src="src/assets/Josiah_Ephraim_Lago.png" width="150" />
+
+### Lance Keith Fajardo
+<img src="src/assets/Lance_Keith_Fajardo.png" width="150" />
