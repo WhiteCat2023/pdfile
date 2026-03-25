@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { getProofreaderModel } from '../utils/gemini';
+import { proofreadText } from '../utils/gemini';
 import { useUsage } from '../contexts/UsageContext';
 import { UpgradeModal } from '../components/UpgradeModal';
 
@@ -27,17 +27,16 @@ const ProofreadingPage = () => {
     setChangesList([]);
 
     try {
-      const model = getProofreaderModel();
-      const result = await model.generateContent(text);
-      const responseText = result.response.text();
-      const proofreadData = JSON.parse(responseText);
+      // The new function handles model initialization, content generation, and JSON parsing.
+      const proofreadData = await proofreadText(text);
 
       setCorrectedText(proofreadData.correctedText);
       setChangesList(proofreadData.changes);
       recordUsage();
     } catch (err) {
       console.error("Proofreading failed:", err);
-      setError("An error occurred while communicating with the AI. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      setError(`Proofreading failed: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
