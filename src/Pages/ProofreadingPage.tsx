@@ -1,22 +1,19 @@
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { diff_match_patch, Diff } from 'diff-match-patch';
-
-import { generateText } from '../utils/gemini';
+import { getProofreaderModel } from '../utils/gemini';
 import { useUsage } from '../contexts/UsageContext';
 import { UpgradeModal } from '../components/UpgradeModal';
 
 const ProofreadingPage = () => {
   const [text, setText] = useState('');
-  const [diffs, setDiffs] = useState<Diff[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [correctedText, setCorrectedText] = useState('');
+  const [changesList, setChangesList] = useState<string[]>([]);
 
   const { isLimitReached, recordUsage } = useUsage();
-
-  const dmp = useMemo(() => new diff_match_patch(), []);
 
   const handleProofread = useCallback(async () => {
     if (isLimitReached) {
@@ -25,44 +22,26 @@ const ProofreadingPage = () => {
     }
 
     setIsLoading(true);
-    setDiffs(null);
     setError(null);
+    setCorrectedText('');
+    setChangesList([]);
 
     try {
-      const prompt = `Proofread the following text for grammar, spelling, punctuation, and style. Only return the corrected text, without any additional comments, explanations, or introductory phrases. The user expects to see only their text, but corrected.\n\nOriginal Text:\n"""\n${text}\n"""`;
+      const model = getProofreaderModel();
+      const result = await model.generateContent(text);
+      const responseText = result.response.text();
+      const proofreadData = JSON.parse(responseText);
 
-      const correctedText = await generateText(prompt);
-
-      const calculatedDiffs = dmp.diff_main(text, correctedText);
-      dmp.diff_cleanupSemantic(calculatedDiffs);
-      
-      setDiffs(calculatedDiffs);
+      setCorrectedText(proofreadData.correctedText);
+      setChangesList(proofreadData.changes);
       recordUsage();
-
     } catch (err) {
-      console.error("Error proofreading text:", err);
+      console.error("Proofreading failed:", err);
       setError("An error occurred while communicating with the AI. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [text, dmp, isLimitReached, recordUsage]);
-
-  const renderDiffs = () => {
-    if (!diffs) return null;
-
-    return diffs.map(([op, data], index) => {
-      switch (op) {
-        case 1: // Insert
-          return <span key={index} className="bg-green-100 text-green-800">{data}</span>;
-        case -1: // Delete
-          return <span key={index} className="bg-red-100 text-red-800 line-through">{data}</span>;
-        case 0: // Equal
-          return <span key={index}>{data}</span>;
-        default:
-          return null;
-      }
-    });
-  };
+  }, [text, isLimitReached, recordUsage]);
 
   return (
     <motion.div
@@ -104,13 +83,24 @@ const ProofreadingPage = () => {
             </div>
         )}
 
-        {diffs && (
+        {correctedText && (
           <div className="mt-6">
-            <h2 className="text-2xl font-bold mb-4">Corrections</h2>
+            <h2 className="text-2xl font-bold mb-4">Corrected Text</h2>
             <div className="bg-zinc-50 p-6 rounded-lg border border-zinc-200 whitespace-pre-wrap text-lg leading-relaxed">
-              <p>{renderDiffs()}</p>
+              <p>{correctedText}</p>
             </div>
           </div>
+        )}
+
+        {changesList.length > 0 && (
+            <div className="mt-6">
+                <h2 className="text-2xl font-bold mb-4">Summary of Changes</h2>
+                <ul className="list-disc list-inside bg-zinc-50 p-6 rounded-lg border border-zinc-200 space-y-2">
+                    {changesList.map((change, index) => (
+                        <li key={index} className="text-zinc-700">{change}</li>
+                    ))}
+                </ul>
+            </div>
         )}
       </div>
     </motion.div>

@@ -1,17 +1,34 @@
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error("VITE_GEMINI_API_KEY is not set. Please add it to your .env file.");
-}
-
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// 1. Define the strict rules for the AI
+const proofreaderPrompt = `
+You are a meticulous, professional copy editor. Your job is to proofread the provided text.
 
-export async function generateText(prompt: string): Promise<string> {
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-  return text;
+Strict Rules:
+1. Fix all grammar, spelling, and punctuation errors.
+2. Mend broken line breaks or strange spacing (common in document extraction).
+3. Preserve the author's original tone and intent. Do NOT completely rewrite the text or add new ideas.
+4. If the text is already perfect, leave it unchanged and state that no fixes were needed.
+
+Output Requirements:
+You must respond with ONLY a valid, raw JSON object. Do not include markdown formatting like \`\`\`json. 
+The JSON must follow this exact structure:
+{
+  "correctedText": "The fully corrected version of the text.",
+  "changes": ["Fixed spelling of 'recieve' to 'receive'", "Added missing comma after introductory clause"]
 }
+`;
+
+// 2. Initialize the model with the instructions and JSON config
+export const getProofreaderModel = () => {
+  return genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: proofreaderPrompt,
+    generationConfig: {
+      responseMimeType: "application/json", // Forces the model to return pure JSON
+    },
+  });
+};
